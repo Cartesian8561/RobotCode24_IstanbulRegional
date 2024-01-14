@@ -40,7 +40,7 @@ import frc.robot.subsystems.SwerveSubsystem;
 public class RobotContainer {
 
   private final CameraSubsystem cameraSubsystem = new CameraSubsystem();
-  private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem();
+  private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem(cameraSubsystem);
   private final Joystick driverJoystick = new Joystick(OIConstants.kDriverControllerPort);
 
   public RobotContainer() {
@@ -74,7 +74,7 @@ public class RobotContainer {
       DriverStation.reportError("Unable to open trajectory: " + trajectoryJSON, ex.getStackTrace());
    }
     */
-    Trajectory trajectory = TrajectoryGenerator.generateTrajectory(new Pose2d(0, 0, new Rotation2d(0)), List.of(), new Pose2d(6.0,0.0, new Rotation2d(0)), config);
+    Trajectory trajectory = TrajectoryGenerator.generateTrajectory(new Pose2d(0, 0, new Rotation2d(0)), List.of(), new Pose2d(3.0,0.0, new Rotation2d(0)), config);
    //Trajectory trajectory =  TrajectoryGenerator.generateTrajectory(new Pose2d(0,0, new Rotation2d()), List.of(new Translation2d(0,1), new Translation2d(1,1), new Translation2d(1,0)), new Pose2d(0,0, new Rotation2d(0)), config);
     PIDController xController = new PIDController(AutoConstants.kPXController, 0, 0);
     PIDController yController = new PIDController(AutoConstants.kPYController, 0, 0);

@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -23,7 +26,7 @@ public class CameraSubsystem extends SubsystemBase {
     tx = table.getEntry("tx");
     tv = table.getEntry("tv");
     ty = table.getEntry("ty");
-    targetPoseToRobot = table.getEntry("targetpose_robotpose");
+    targetPoseToRobot = table.getEntry("targetpose_robotspace");
   }
 
   public double getXOffset(){
@@ -31,6 +34,15 @@ public class CameraSubsystem extends SubsystemBase {
   }
   public double[] getTargetPose(){
     return targetPoseToRobot.getDoubleArray(new double[6]);
+  }
+
+  public Pose3d get3dPose(){
+    double[] pose = getTargetPose();
+    return new Pose3d(pose[0], pose[1], pose[2], new Rotation3d(pose[3], pose[4], pose[5]));
+  }
+
+  public Pose2d get2dPose(){
+    return new Pose2d(get3dPose().getZ(), get3dPose().getX(), get3dPose().getRotation().toRotation2d());
   }
   
   public double getYOffset(){

@@ -6,6 +6,7 @@ package frc.robot.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
 
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -13,6 +14,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
@@ -57,7 +59,10 @@ private final SwerveModule backRight = new SwerveModule(
 
 private final AHRS gyro = new AHRS(SPI.Port.kMXP);
 
+
 private double rot = 0;
+
+private CameraSubsystem cameraSubsystem;
 
 
 private final SwerveDriveOdometry odometer = new SwerveDriveOdometry(DriveConstants.kDriveKinematics,
@@ -70,7 +75,14 @@ private final SwerveDriveOdometry odometer = new SwerveDriveOdometry(DriveConsta
     }
     );
 
-public SwerveSubsystem() {
+private SwerveDrivePoseEstimator m_poseEstimator = new SwerveDrivePoseEstimator(DriveConstants.kDriveKinematics, getRotation2d(), new SwerveModulePosition[]{
+    frontLeft.getPosition(),
+    frontRight.getPosition(),
+    backLeft.getPosition(),
+    backRight.getPosition()
+}, getPose());
+
+public SwerveSubsystem(CameraSubsystem cameraSubsystem) {
 new Thread(() -> {
     try {
         Thread.sleep(1000);
@@ -78,11 +90,13 @@ new Thread(() -> {
     } catch (Exception e) {
     }
 }).start();
+this.cameraSubsystem = cameraSubsystem;
 }
 
 public void zeroHeading() {
     gyro.reset();
 }
+
 
 public double noAngle(){
     return 0.0;
@@ -102,7 +116,20 @@ return Rotation2d.fromDegrees(getHeading());
 }
 
 public Pose2d getPose() {
-return odometer.getPoseMeters();
+    return odometer.getPoseMeters();
+}
+
+public Pose2d getEstimatedPose(){
+    return m_poseEstimator.getEstimatedPosition();
+}
+
+public void resetPoseEstimator(Pose2d pose){
+    m_poseEstimator.resetPosition(getRotation2d(), new SwerveModulePosition[]{
+        frontLeft.getPosition(),
+        frontRight.getPosition(),
+        backLeft.getPosition(),
+        backRight.getPosition()
+    }, pose);
 }
 
 public void resetOdometry(Pose2d pose) {
@@ -116,8 +143,12 @@ public void resetOdometry(Pose2d pose) {
 }
 
 public Rotation2d desiredRot(){
-    return Rotation2d.fromDegrees(rot += 1.0);
-    //return new Rotation2d();
+    //return Rotation2d.fromDegrees(rot += 1.0);
+    return new Rotation2d();
+}
+
+public void addVisionMeasurement(Pose2d visionMeasurement2d){
+    m_poseEstimator.addVisionMeasurement(visionMeasurement2d, Timer.getFPGATimestamp());
 }
 
 @Override
@@ -129,6 +160,22 @@ new SwerveModulePosition[] {
     backLeft.getPosition(),
     backRight.getPosition()
 });
+
+m_poseEstimator.update(getRotation2d(), new SwerveModulePosition[]{
+    frontLeft.getPosition(),
+    frontRight.getPosition(),
+    backLeft.getPosition(),
+    backRight.getPosition()
+});
+
+if(cameraSubsystem.get2dPose() != null && cameraSubsystem.isValid()){
+    addVisionMeasurement(cameraSubsystem.get2dPose());
+}
+    //SmartDashboard.putNumber("estimated rot", getEstimatedPose().getRotation().getDegrees());
+
+    SmartDashboard.putNumber("estimated x", m_poseEstimator.getEstimatedPosition().getX());
+    SmartDashboard.putNumber("estimated y", m_poseEstimator.getEstimatedPosition().getY());
+
     SmartDashboard.putNumber("Robot Heading", getHeading());
     SmartDashboard.putString("Robot Location", getPose().getTranslation().toString());
     SmartDashboard.putNumber("front right magReading", frontRight.getAbsoluteEncoderRad());

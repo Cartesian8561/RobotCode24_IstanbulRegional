@@ -40,13 +40,18 @@ public class AimAtTargetCommand extends CommandBase {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-      double movingx = MathUtil.clamp(xmovingController.calculate(cameraSubsystem.getYOffset(), 15.0) / 20.0, -1.0, 1.0);
-      double movingy = MathUtil.clamp(ymovingController.calculate(-cameraSubsystem.getXOffset()) / 20.0, -1.0, 1.0);
+      //double movingx = MathUtil.clamp(xmovingController.calculate(cameraSubsystem.getYOffset(), 15.0) / 20.0, -1.0, 1.0);
+      //double movingy = MathUtil.clamp(ymovingController.calculate(-cameraSubsystem.getXOffset()) / 20.0, -1.0, 1.0);
+      double movingx = -MathUtil.clamp(xmovingController.calculate((swerveSubsystem.getEstimatedPose().getX()), 1.44), -1, 1.0);
+      double movingy = -MathUtil.clamp(ymovingController.calculate((swerveSubsystem.getEstimatedPose().getY()), 0.0), -1, 1.0);
+      //double steeringAdjust = -MathUtil.clamp(pidController.calculate((swerveSubsystem.getEstimatedPose().getRotation().getDegrees()), 0) / 20.0, -1.0, 1.0);
       SmartDashboard.putNumber("ye", movingy);
-      //double steeringAdjust = MathUtil.clamp(pidController.calculate(-cameraSubsystem.getXOffset()) / 20.0, -1.0, 1.0);
+      SmartDashboard.putNumber("iks", movingx);
+      //SmartDashboard.putNumber("angleis", swerveSubsystem.getEstimatedPose().getRotation().getDegrees());
+      double steeringAdjust = MathUtil.clamp(pidController.calculate(-cameraSubsystem.getXOffset()) / 20.0, -1.0, 1.0);
       //SmartDashboard.putNumber("steer", steeringAdjust);
       //ChassisSpeeds chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(movingx * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond / 2, 0.0,steeringAdjust * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond / 4, swerveSubsystem.getRotation2d());
-      ChassisSpeeds chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(movingx * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond / 4,movingy * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond / 4 , 0.0, swerveSubsystem.getRotation2d());
+      ChassisSpeeds chassisSpeeds = new ChassisSpeeds(movingx * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond / 2,movingy * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond / 2 , steeringAdjust * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond / 4);
     
       SwerveModuleState[] swerveModuleState = DriveConstants.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
       swerveSubsystem.setModuleStates(swerveModuleState);
